@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Este aplicacion representa a una entidad crediticia la cual
  * concentra todos los creditos otorgados a los clientes de
  * diferentes entidades.
@@ -11,21 +11,39 @@
 #include <winsock2.h>
 #include <unistd.h>
 
-#define PORT 3550 /* El puerto que será abierto */
+#define PORT 50000 /* El puerto que será abierto */
 #define BACKLOG 2 /* El número de conexiones permitidas */
 
 void doprocessing (int sock)
 {
-    int n;
-    char buffer[256];
-
-    memset(&(buffer), '0', 256);
+    char buffer[256], myString[100], *aux;
+    memset(buffer, 0, 255);
+	
     int recvMsgSize;
+	FILE *file;
     
     /* Receive message from client */
     if ((recvMsgSize = recv(sock, buffer, 256, 0)) < 0)
         perror("ERROR reading to socket");
-
+		
+	//printf("   %d\n",recvMsgSize);
+	printf("Here is the message: %s\n",buffer); //Just for testing if buffer is received
+	
+	file = fopen("C:\\Users\\usuario\\Documents\\GitHub\\WORKSHOP\\workshop-gdl\\workshop\\credit-bureau\\src\\c\\Loans.txt","r");
+	if (file == NULL)
+		perror ("Error opening file");
+		
+      else {
+		while(feof(file) == 0)
+		{
+			aux = fgets(myString, sizeof(myString), file);
+            if (strstr(myString,buffer))
+			{
+                 puts (aux);
+				 send(sock, aux, 100, 0);
+				 }
+		}
+		}
     /* Send received string and receive again until end of transmission */
     while (recvMsgSize > 0)      /* zero indicates end of transmission */
     {
@@ -74,6 +92,9 @@ int main()
 	 initW32(); /* Necesaria para compilar en Windows */ 
 	 	
    int fd, fd2; /* los descriptores de archivos */
+  // char buffer[256];
+  // memset(buffer, 0, 255);
+   
 
    /* para la información de la dirección del servidor */
    struct sockaddr_in server;
@@ -86,24 +107,34 @@ int main()
    pid_t pid;
 
    /* A continuación la llamada a socket() */
-   if ((fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 ) {
+   if ((fd=socket(AF_INET, SOCK_STREAM, 0)) == -1 ) {	/*AF_INET -> Address family format for IPv4
+														  SOCK_STREAM -> A socket type that provides sequenced, 
+														  reliable, two-way, connection-based byte streams. This 
+														  socket type uses the Transmission Control Protocol (TCP).
+														  0 -> Protocol used. If a value of 0 is specified, the caller 
+														  does not wish to specify a protocol and the service provider 
+														  will choose the protocol to use.*/
       printf("error en socket()\n");
       exit(-1);
    }
 
-   server.sin_family = AF_INET;
+   server.sin_family = AF_INET; //AF_INET -> Address family format for IPv4
 
-   server.sin_port = htons(PORT);
-
-   server.sin_addr.s_addr = INADDR_ANY;
-   /* INADDR_ANY coloca nuestra dirección IP automáticamente */
+   server.sin_port = htons(PORT); /*Internet Protocol (IP) port
+									The htons() function converts PORT from host to TCP/IP network byte order.
+									*/
+									
+   server.sin_addr.s_addr = INADDR_ANY;		/*sinn_addr -> IP address in network byte order.
+											  INADDR -> it allows the server to receive packets destined to any 
+											  of the interfaces. Coloca nuestra dirección IP automáticamente */
 
    //bzero(&(server.sin_zero),8);
-   memset(&(server.sin_zero), '0', 8);
+   memset(&(server.sin_zero), '0', 8);	/*Sets buffers to a specified character.*/
    /* escribimos ceros en el reto de la estructura */
 
 
-   /* A continuación la llamada a bind() */
+   /* A continuación la llamada a bind().The bind function associates a local address with a socket.
+	  If no error occurs, bind returns zero. Otherwise, it returns SOCKET_ERROR */
    if(bind(fd,(struct sockaddr*)&server, sizeof(struct sockaddr))==-1) {
       printf("error en bind() \n");
       exit(-1);
@@ -121,11 +152,14 @@ int main()
          printf("error en accept()\n");
          exit(-1);
       }
+		printf("Se obtuvo una conexion desde %s\n", inet_ntoa(client.sin_addr) ); /*inet_ntoa function converts 
+																				  an (Ipv4) Internet network 
+																				  address into an ASCII string 
+																				  in Internet standard dotted-decimal 
+																				  format.
+																				  que mostrará la IP del cliente */
 
-      printf("Se obtuvo una conexión desde %s\n", inet_ntoa(client.sin_addr) );
-      /* que mostrará la IP del cliente */
-
-      send(fd2,"Bienvenido a mi servidor.\n",22,0);
+      //send(fd2,"Welcome to C server, I got your message!.\n",1000,0);
       /* que enviará el mensaje de bienvenida al cliente */
       
       doprocessing(fd2);
