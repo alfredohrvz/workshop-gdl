@@ -16,34 +16,56 @@
 
 void doprocessing (int sock)
 {
-    char buffer[256], myString[100], *aux;
+    char buffer[256], myString[100], myString2[100], *aux, rfc[256], x[2] = {'#','#'}, *token, del[2] = "|", taker;
     memset(buffer, 0, 255);
-	
-    int recvMsgSize;
+	memset(rfc, 0, 255);
+	int lenght, recvMsgSize, i;
 	FILE *file;
     
     /* Receive message from client */
     if ((recvMsgSize = recv(sock, buffer, 256, 0)) < 0)
         perror("ERROR reading to socket");
 		
-	//printf("   %d\n",recvMsgSize);
-	printf("Here is the message: %s\n",buffer); //Just for testing if buffer is received
+	for(i=0; i<256; i++)
+	{
+			rfc[i] = buffer[i];
+	}
+	memset(buffer, 0, 255);
+	
+	printf("Here is the message: %s\n",rfc); //Just for testing if buffer is received
+	
 	
 	file = fopen("C:\\Users\\usuario\\Documents\\GitHub\\WORKSHOP\\workshop-gdl\\workshop\\credit-bureau\\src\\c\\Loans.txt","r");
 	if (file == NULL)
 		perror ("Error opening file");
 		
       else {
-		while(feof(file) == 0)
+		//while(feof(file) == 0)
+		while(!feof(file))
 		{
 			aux = fgets(myString, sizeof(myString), file);
-            if (strstr(myString,buffer))
+			lenght = strlen(myString);
+            if (strstr(myString,rfc))
 			{
                  puts (aux);
-				 send(sock, aux, 100, 0);
+				 send(sock, aux, lenght, 0);
 				 }
+				 memset(myString, 0, sizeof(myString));
 		}
+		//printf("Taker finish:  %s",taker);
+		send(sock, x, sizeof(x), 0);
+		
+		while(!feof(file))
+		{
+			aux = fgets(myString2, sizeof(myString2), file);
+            
+			token = strtok(myString2, del);
+			printf("\nToken :  %s\n",token);
+				 memset(myString2, 0, sizeof(myString2));
 		}
+		fclose(file);
+		}
+		
     /* Send received string and receive again until end of transmission */
     while (recvMsgSize > 0)      /* zero indicates end of transmission */
     {
@@ -51,7 +73,7 @@ void doprocessing (int sock)
         if (send(sock, buffer, recvMsgSize, 0) != recvMsgSize)
             perror("ERROR writing to socket");
 
-        /* See if there is more data to receive */
+      /* See if there is more data to receive */
         if ((recvMsgSize = recv(sock, buffer, 256, 0)) < 0)
             perror("ERROR reading to socket");
     }
@@ -166,4 +188,3 @@ int main()
 
    } /* end while */
 }
-
